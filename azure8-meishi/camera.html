@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名刺撮影 - Azure8</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #2C3E50;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: #2C3E50;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .camera-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .coming-soon {
+      text-align: center;
+      color: white;
+    }
+
+    .coming-soon-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+
+    .coming-soon-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .coming-soon-text {
+      font-size: 16px;
+      color: #BDC3C7;
+      margin-bottom: 30px;
+    }
+
+    .back-to-register-btn {
+      padding: 16px 32px;
+      background: white;
+      color: #2C3E50;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .back-to-register-btn:hover {
+      background: #ECF0F1;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="close-btn" onclick="location.href='select-method.html'">✕</button>
+    <div class="header-title">名刺撮影</div>
+  </div>
+
+  <div class="camera-container">
+    <div class="coming-soon">
+      <div class="coming-soon-icon">📷</div>
+      <div class="coming-soon-title">撮影機能は準備中です</div>
+      <div class="coming-soon-text">
+        現在、カメラ撮影とAI自動入力機能を開発中です。<br>
+        しばらくお待ちください。
+      </div>
+      <a href="register.html" class="back-to-register-btn">手動入力で登録する</a>
+    </div>
+  </div>
+</body>
+</html>

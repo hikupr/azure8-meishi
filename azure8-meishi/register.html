@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名刺登録 - Azure8</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F8F9FA;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #2C3E50;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      color: #2C3E50;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .form-label.required::after {
+      content: '*';
+      color: #E74C3C;
+      margin-left: 4px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #DEE2E6;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+      transition: border 0.3s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #3498DB;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    /* 画像アップロード */
+    .image-upload-area {
+      border: 2px dashed #DEE2E6;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: white;
+    }
+
+    .image-upload-area:hover {
+      border-color: #3498DB;
+      background: #F8F9FA;
+    }
+
+    .image-upload-area.has-image {
+      border: 2px solid #27AE60;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .upload-text {
+      color: #7F8C8D;
+      font-size: 14px;
+    }
+
+    .image-preview {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .image-preview.show {
+      display: block;
+    }
+
+    .remove-image-btn {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: #E74C3C;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      display: none;
+    }
+
+    .remove-image-btn.show {
+      display: inline-block;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: #27AE60;
+      color: white;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+      transition: all 0.3s;
+      margin-top: 30px;
+    }
+
+    .submit-btn:hover {
+      background: #229954;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
+    }
+
+    .submit-btn:disabled {
+      background: #95A5A6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #7F8C8D;
+    }
+
+    .message {
+      display: none;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      white-space: pre-line;
+    }
+
+    .message.success {
+      background: #D5F5E3;
+      color: #27AE60;
+      border: 1px solid #27AE60;
+    }
+
+    .message.error {
+      background: #FADBD8;
+      color: #E74C3C;
+      border: 1px solid #E74C3C;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="back-btn" onclick="location.href='select-method.html'">←</button>
+    <div class="header-title">名刺登録</div>
+  </div>
+
+  <div class="container">
+    <div id="message" class="message"></div>
+
+    <form id="cardForm">
+      <!-- 画像アップロード -->
+      <div class="form-group">
+        <label class="form-label">名刺画像</label>
+        <div class="image-upload-area" id="imageUploadArea">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">クリックして名刺画像を選択</div>
+          <input type="file" id="imageInput" accept="image/*" style="display: none;">
+          <img id="imagePreview" class="image-preview" alt="プレビュー">
+        </div>
+        <button type="button" class="remove-image-btn" id="removeImageBtn">画像を削除</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">氏名</label>
+        <input type="text" class="form-input" name="name" required placeholder="山田 太郎">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ふりがな</label>
+        <input type="text" class="form-input" name="furigana" placeholder="やまだ たろう">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">会社名</label>
+        <input type="text" class="form-input" name="company" required placeholder="株式会社サンプル">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">媒体名</label>
+        <input type="text" class="form-input" name="media" placeholder="サンプルニュース">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">部署名</label>
+        <input type="text" class="form-input" name="department" placeholder="営業部">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">役職</label>
+        <input type="text" class="form-input" name="position" placeholder="部長">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">電話番号</label>
+        <input type="tel" class="form-input" name="phone" placeholder="03-1234-5678">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">携帯番号</label>
+        <input type="tel" class="form-input" name="mobile" placeholder="090-1234-5678">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">メールアドレス</label>
+        <input type="email" class="form-input" name="email" placeholder="example@company.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">住所</label>
+        <input type="text" class="form-input" name="address" placeholder="東京都渋谷区...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">WebサイトURL</label>
+        <input type="url" class="form-input" name="website" placeholder="https://example.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">ジャンル</label>
+        <select class="form-select" name="genre" required>
+          <option value="">選択してください</option>
+          <option value="TV">TV</option>
+          <option value="Web">Web</option>
+          <option value="雑誌">雑誌</option>
+          <option value="新聞">新聞</option>
+          <option value="放送作家">放送作家</option>
+          <option value="ラジオ">ラジオ</option>
+          <option value="Youtube">Youtube</option>
+          <option value="専門誌">専門誌</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">名刺交換日</label>
+        <input type="date" class="form-input" name="exchangeDate" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">メモ</label>
+        <textarea class="form-textarea" name="memo" placeholder="メモを入力..."></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">登録する</button>
+    </form>
+
+    <div id="loading" class="loading">登録中...</div>
+  </div>
+
+  <script>
+    // ★★★ ここにあなたのGoogle Apps ScriptのURLを貼り付けてください ★★★
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwmf5668FrOME4JZNzpRT2Ydg9bl74Ufy5vtOCiF9GAxIrjY4Wh-gSBQEyngjCIYoa4rA/exec';
+    
+    let selectedImageData = null;
+
+    // 今日の日付をデフォルトで設定
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.querySelector('input[name="exchangeDate"]').value = today;
+
+      // 画像アップロード処理
+      const imageUploadArea = document.getElementById('imageUploadArea');
+      const imageInput = document.getElementById('imageInput');
+      const imagePreview = document.getElementById('imagePreview');
+      const removeImageBtn = document.getElementById('removeImageBtn');
+
+      imageUploadArea.addEventListener('click', () => {
+        imageInput.click();
+      });
+
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            selectedImageData = event.target.result;
+            imagePreview.src = selectedImageData;
+            imagePreview.classList.add('show');
+            removeImageBtn.classList.add('show');
+            imageUploadArea.classList.add('has-image');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      removeImageBtn.addEventListener('click', () => {
+        selectedImageData = null;
+        imageInput.value = '';
+        imagePreview.src = '';
+        imagePreview.classList.remove('show');
+        removeImageBtn.classList.remove('show');
+        imageUploadArea.classList.remove('has-image');
+      });
+    });
+
+    // フォーム送信
+    document.getElementById('cardForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // API URLが設定されているか確認
+      if (API_URL === 'YOUR_SCRIPT_URL_HERE') {
+        alert('エラー: Google Apps ScriptのURLが設定されていません。\n\nregister.htmlの「YOUR_SCRIPT_URL_HERE」を実際のURLに置き換えてください。');
+        return;
+      }
+      
+      const form = e.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData);
+      
+      // 画像データを追加
+      data.imageUrl = selectedImageData || '';
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const loading = document.getElementById('loading');
+      const message = document.getElementById('message');
+      
+      // ローディング表示
+      submitBtn.disabled = true;
+      loading.style.display = 'block';
+      message.style.display = 'none';
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'text/plain',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTPエラー: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // 成功メッセージ表示
+          message.textContent = '名刺を登録しました！';
+          message.className = 'message success';
+          message.style.display = 'block';
+          
+          // フォームをリセット
+          form.reset();
+          selectedImageData = null;
+          document.getElementById('imagePreview').classList.remove('show');
+          document.getElementById('removeImageBtn').classList.remove('show');
+          document.getElementById('imageUploadArea').classList.remove('has-image');
+          
+          // 今日の日付を再設定
+          const today = new Date().toISOString().split('T')[0];
+          document.querySelector('input[name="exchangeDate"]').value = today;
+          
+          // 2秒後にTOPに戻る
+          setTimeout(() => {
+            location.href = 'index.html';
+          }, 2000);
+        } else {
+          throw new Error(result.error || '登録に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        let errorMessage = 'エラーが発生しました: ' + error.message;
+        
+        if (error.message.includes('Failed to fetch')) {
+          errorMessage = `エラー: Google Apps ScriptのURLが間違っているか、デプロイ設定が正しくありません。
+
+確認事項:
+1. API URLが正しいか
+2. Google Apps Scriptで「アクセスできるユーザー: 全員」になっているか
+3. デプロイを「新バージョン」で更新したか`;
+        }
+        
+        message.textContent = errorMessage;
+        message.className = 'message error';
+        message.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

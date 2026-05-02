@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名刺詳細 - Azure8</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F8F9FA;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #2C3E50;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: bold;
+      flex: 1;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .card-detail {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .card-image {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .detail-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2C3E50;
+      margin-bottom: 4px;
+    }
+
+    .detail-furigana {
+      font-size: 14px;
+      color: #95A5A6;
+      margin-bottom: 20px;
+    }
+
+    .detail-section {
+      margin-bottom: 24px;
+    }
+
+    .detail-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .detail-icon {
+      font-size: 20px;
+      width: 24px;
+    }
+
+    .detail-content {
+      flex: 1;
+    }
+
+    .detail-label {
+      font-size: 12px;
+      color: #95A5A6;
+      margin-bottom: 4px;
+    }
+
+    .detail-value {
+      font-size: 16px;
+      color: #2C3E50;
+      word-break: break-all;
+    }
+
+    .detail-value a {
+      color: #3498DB;
+      text-decoration: none;
+    }
+
+    .detail-value a:hover {
+      text-decoration: underline;
+    }
+
+    .action-btn {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: #3498DB;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 20px;
+      transition: all 0.3s;
+    }
+
+    .action-btn:hover {
+      background: #2980B9;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #7F8C8D;
+    }
+
+    .genre-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      background: #ECF0F1;
+      color: #2C3E50;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="back-btn" onclick="location.href='list.html'">←</button>
+    <div class="header-title">名刺詳細</div>
+  </div>
+
+  <div class="container">
+    <div id="loading" class="loading">読み込み中...</div>
+    <div id="cardDetail" style="display: none;"></div>
+  </div>
+
+  <script>
+    // ★★★ ここにあなたのGoogle Apps ScriptのURLを貼り付けてください ★★★
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwmf5668FrOME4JZNzpRT2Ydg9bl74Ufy5vtOCiF9GAxIrjY4Wh-gSBQEyngjCIYoa4rA/exec';
+    
+    // URLパラメータからIDを取得
+    const params = new URLSearchParams(window.location.search);
+    const cardId = params.get('id');
+
+    // ページ読み込み時にデータ取得
+    document.addEventListener('DOMContentLoaded', () => {
+      if (cardId) {
+        loadCard(cardId);
+      } else {
+        alert('名刺IDが指定されていません');
+        location.href = 'list.html';
+      }
+    });
+
+    // データ取得
+    async function loadCard(id) {
+      const loading = document.getElementById('loading');
+      const cardDetail = document.getElementById('cardDetail');
+      
+      try {
+        const response = await fetch(API_URL);
+        const result = await response.json();
+        
+        if (result.success) {
+          const card = result.data.find(c => c.id == id);
+          
+          if (card) {
+            displayCard(card);
+          } else {
+            throw new Error('名刺が見つかりませんでした');
+          }
+        } else {
+          throw new Error(result.error || 'データの取得に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('エラーが発生しました: ' + error.message);
+        location.href = 'list.html';
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    // カード表示
+    function displayCard(card) {
+      const cardDetail = document.getElementById('cardDetail');
+      
+      cardDetail.innerHTML = `
+        <div class="card-detail">
+          ${card.imageUrl ? `
+          <img src="${card.imageUrl}" alt="名刺画像" class="card-image">
+          ` : ''}
+          
+          <div class="detail-name">👤 ${card.name}</div>
+          ${card.furigana ? `<div class="detail-furigana">(${card.furigana})</div>` : ''}
+          
+          <div class="detail-section">
+            <div class="detail-item">
+              <div class="detail-icon">🏢</div>
+              <div class="detail-content">
+                <div class="detail-label">会社名</div>
+                <div class="detail-value">${card.company}</div>
+              </div>
+            </div>
+            
+            ${card.media ? `
+            <div class="detail-item">
+              <div class="detail-icon">📺</div>
+              <div class="detail-content">
+                <div class="detail-label">媒体名</div>
+                <div class="detail-value">${card.media}</div>
+              </div>
+            </div>
+            ` : ''}
+            
+            ${card.department || card.position ? `
+            <div class="detail-item">
+              <div class="detail-icon">💼</div>
+              <div class="detail-content">
+                <div class="detail-label">部署・役職</div>
+                <div class="detail-value">${card.department} ${card.position}</div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+
+          ${card.phone || card.mobile || card.email ? `
+          <div class="detail-section">
+            ${card.phone ? `
+            <div class="detail-item">
+              <div class="detail-icon">📞</div>
+              <div class="detail-content">
+                <div class="detail-label">電話番号</div>
+                <div class="detail-value"><a href="tel:${card.phone}">${card.phone}</a></div>
+              </div>
+            </div>
+            ` : ''}
+            
+            ${card.mobile ? `
+            <div class="detail-item">
+              <div class="detail-icon">📱</div>
+              <div class="detail-content">
+                <div class="detail-label">携帯番号</div>
+                <div class="detail-value"><a href="tel:${card.mobile}">${card.mobile}</a></div>
+              </div>
+            </div>
+            ` : ''}
+            
+            ${card.email ? `
+            <div class="detail-item">
+              <div class="detail-icon">✉️</div>
+              <div class="detail-content">
+                <div class="detail-label">メールアドレス</div>
+                <div class="detail-value"><a href="mailto:${card.email}">${card.email}</a></div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+          ` : ''}
+
+          ${card.address ? `
+          <div class="detail-section">
+            <div class="detail-item">
+              <div class="detail-icon">🏠</div>
+              <div class="detail-content">
+                <div class="detail-label">住所</div>
+                <div class="detail-value">${card.address}</div>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+
+          ${card.website ? `
+          <div class="detail-section">
+            <div class="detail-item">
+              <div class="detail-icon">🌐</div>
+              <div class="detail-content">
+                <div class="detail-label">WebサイトURL</div>
+                <div class="detail-value"><a href="${card.website}" target="_blank">${card.website}</a></div>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+
+          <div class="detail-section">
+            <div class="detail-item">
+              <div class="detail-icon">📁</div>
+              <div class="detail-content">
+                <div class="detail-label">ジャンル</div>
+                <div class="detail-value"><span class="genre-badge">${card.genre}</span></div>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <div class="detail-icon">📅</div>
+              <div class="detail-content">
+                <div class="detail-label">名刺交換日</div>
+                <div class="detail-value">${card.exchangeDate}</div>
+              </div>
+            </div>
+            
+            ${card.memo ? `
+            <div class="detail-item">
+              <div class="detail-icon">📝</div>
+              <div class="detail-content">
+                <div class="detail-label">メモ</div>
+                <div class="detail-value">${card.memo}</div>
+              </div>
+            </div>
+            ` : ''}
+          </div>
+
+          <button class="action-btn" onclick="shareCard()">📤 共有する</button>
+        </div>
+      `;
+      
+      cardDetail.style.display = 'block';
+      
+      // 共有用データをグローバルに保存
+      window.currentCard = card;
+    }
+
+    // 共有機能
+    function shareCard() {
+      const card = window.currentCard;
+      
+      const text = `【名刺情報】${card.name}
+
+━━━━━━━━━━━━━━━━
+氏名: ${card.name}${card.furigana ? '（' + card.furigana + '）' : ''}
+会社名: ${card.company}
+${card.media ? '媒体名: ' + card.media + '\n' : ''}${card.department ? '部署: ' + card.department + '\n' : ''}${card.position ? '役職: ' + card.position + '\n' : ''}━━━━━━━━━━━━━━━━
+${card.phone ? '📞 電話: ' + card.phone + '\n' : ''}${card.mobile ? '📱 携帯: ' + card.mobile + '\n' : ''}${card.email ? '✉️ メール: ' + card.email + '\n' : ''}${card.address ? '🏠 住所: ' + card.address + '\n' : ''}${card.website ? '🌐 Web: ' + card.website + '\n' : ''}━━━━━━━━━━━━━━━━
+${card.memo ? 'メモ: ' + card.memo + '\n' : ''}
+よろしくお願いいたします。`;
+
+      // Web Share API対応ブラウザの場合
+      if (navigator.share) {
+        navigator.share({
+          title: '【名刺情報】' + card.name,
+          text: text
+        }).catch(err => console.log('Share cancelled'));
+      } else {
+        // 非対応の場合はメールリンク
+        const mailtoLink = `mailto:?subject=${encodeURIComponent('【名刺情報】' + card.name)}&body=${encodeURIComponent(text)}`;
+        window.location.href = mailtoLink;
+      }
+    }
+  </script>
+</body>
+</html>

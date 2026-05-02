@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名刺一覧 - Azure8</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F8F9FA;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #2C3E50;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #DEE2E6;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #3498DB;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: 1px solid #DEE2E6;
+      border-radius: 20px;
+      background: white;
+      font-size: 14px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .filter-btn.active {
+      background: #2C3E50;
+      color: white;
+      border-color: #2C3E50;
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #DEE2E6;
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .card-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2C3E50;
+      margin-bottom: 8px;
+    }
+
+    .card-company {
+      font-size: 14px;
+      color: #7F8C8D;
+      margin-bottom: 4px;
+    }
+
+    .card-position {
+      font-size: 14px;
+      color: #95A5A6;
+    }
+
+    .card-genre {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #ECF0F1;
+      color: #2C3E50;
+      border-radius: 12px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #7F8C8D;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #95A5A6;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="back-btn" onclick="location.href='index.html'">←</button>
+    <div class="header-title">名刺一覧</div>
+  </div>
+
+  <div class="container">
+    <div class="search-box">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍 氏名・会社名で検索">
+    </div>
+
+    <div class="filter-group" id="filterGroup">
+      <button class="filter-btn active" data-genre="all">全て</button>
+      <button class="filter-btn" data-genre="TV">TV</button>
+      <button class="filter-btn" data-genre="Web">Web</button>
+      <button class="filter-btn" data-genre="雑誌">雑誌</button>
+      <button class="filter-btn" data-genre="新聞">新聞</button>
+      <button class="filter-btn" data-genre="放送作家">放送作家</button>
+      <button class="filter-btn" data-genre="ラジオ">ラジオ</button>
+      <button class="filter-btn" data-genre="Youtube">Youtube</button>
+      <button class="filter-btn" data-genre="専門誌">専門誌</button>
+    </div>
+
+    <div id="loading" class="loading">読み込み中...</div>
+    <div id="cardList" class="card-list"></div>
+    <div id="empty" class="empty" style="display: none;">
+      <div class="empty-icon">📋</div>
+      <div>登録されている名刺がありません</div>
+    </div>
+  </div>
+
+  <script>
+    // ★★★ ここにあなたのGoogle Apps ScriptのURLを貼り付けてください ★★★
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwmf5668FrOME4JZNzpRT2Ydg9bl74Ufy5vtOCiF9GAxIrjY4Wh-gSBQEyngjCIYoa4rA/exec';
+    
+    let allCards = [];
+    let currentGenre = 'all';
+
+    // ページ読み込み時にデータ取得
+    document.addEventListener('DOMContentLoaded', () => {
+      loadCards();
+      setupEventListeners();
+    });
+
+    // データ取得
+    async function loadCards() {
+      const loading = document.getElementById('loading');
+      const cardList = document.getElementById('cardList');
+      const empty = document.getElementById('empty');
+      
+      try {
+        const response = await fetch(API_URL);
+        const result = await response.json();
+        
+        if (result.success) {
+          allCards = result.data;
+          displayCards(allCards);
+        } else {
+          throw new Error(result.error || 'データの取得に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('エラーが発生しました: ' + error.message);
+      } finally {
+        loading.style.display = 'none';
+      }
+    }
+
+    // カード表示
+    function displayCards(cards) {
+      const cardList = document.getElementById('cardList');
+      const empty = document.getElementById('empty');
+      
+      if (cards.length === 0) {
+        cardList.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+      
+      empty.style.display = 'none';
+      
+      cardList.innerHTML = cards.map(card => `
+        <div class="card" onclick="location.href='detail.html?id=${card.id}'">
+          <div class="card-name">👤 ${card.name}</div>
+          <div class="card-company">${card.company}</div>
+          <div class="card-position">${card.department ? card.department + ' ' : ''}${card.position}</div>
+          <span class="card-genre">${card.genre}</span>
+        </div>
+      `).join('');
+    }
+
+    // イベントリスナー設定
+    function setupEventListeners() {
+      // 検索
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        filterCards();
+      });
+      
+      // ジャンルフィルター
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          // アクティブ状態を切り替え
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          e.target.classList.add('active');
+          
+          currentGenre = e.target.dataset.genre;
+          filterCards();
+        });
+      });
+    }
+
+    // フィルタリング
+    function filterCards() {
+      const searchText = document.getElementById('searchInput').value.toLowerCase();
+      
+      let filtered = allCards;
+      
+      // ジャンルフィルター
+      if (currentGenre !== 'all') {
+        filtered = filtered.filter(card => card.genre === currentGenre);
+      }
+      
+      // 検索フィルター
+      if (searchText) {
+        filtered = filtered.filter(card => 
+          card.name.toLowerCase().includes(searchText) ||
+          card.company.toLowerCase().includes(searchText)
+        );
+      }
+      
+      displayCards(filtered);
+    }
+  </script>
+</body>
+</html>
