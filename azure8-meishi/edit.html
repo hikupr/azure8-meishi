@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>名刺編集 - Azure8</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #F8F9FA;
+      min-height: 100vh;
+    }
+
+    .header {
+      background: #2C3E50;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      color: #2C3E50;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .form-label.required::after {
+      content: '*';
+      color: #E74C3C;
+      margin-left: 4px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #DEE2E6;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+      transition: border 0.3s;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #3498DB;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .card-image {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: #3498DB;
+      color: white;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+      transition: all 0.3s;
+      margin-top: 30px;
+    }
+
+    .submit-btn:hover {
+      background: #2980B9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+    }
+
+    .submit-btn:disabled {
+      background: #95A5A6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #7F8C8D;
+    }
+
+    .message {
+      display: none;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      white-space: pre-line;
+    }
+
+    .message.success {
+      background: #D5F5E3;
+      color: #27AE60;
+      border: 1px solid #27AE60;
+    }
+
+    .message.error {
+      background: #FADBD8;
+      color: #E74C3C;
+      border: 1px solid #E74C3C;
+    }
+
+    .loading-overlay {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      color: #7F8C8D;
+    }
+
+    .loading-overlay.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="header-title">名刺編集</div>
+  </div>
+
+  <div class="container">
+    <div id="loadingOverlay" class="loading-overlay">読み込み中...</div>
+    <div id="message" class="message"></div>
+
+    <form id="editForm" style="display: none;">
+      <!-- 名刺画像 -->
+      <div id="imageContainer"></div>
+
+      <div class="form-group">
+        <label class="form-label required">氏名</label>
+        <input type="text" class="form-input" name="name" required placeholder="山田 太郎">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">ふりがな</label>
+        <input type="text" class="form-input" name="furigana" placeholder="やまだ たろう">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">会社名</label>
+        <input type="text" class="form-input" name="company" required placeholder="株式会社サンプル">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">媒体名</label>
+        <input type="text" class="form-input" name="media" placeholder="サンプルニュース">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">部署名</label>
+        <input type="text" class="form-input" name="department" placeholder="営業部">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">役職</label>
+        <input type="text" class="form-input" name="position" placeholder="部長">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">電話番号</label>
+        <input type="tel" class="form-input" name="phone" placeholder="03-1234-5678">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">携帯番号</label>
+        <input type="tel" class="form-input" name="mobile" placeholder="090-1234-5678">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">メールアドレス</label>
+        <input type="email" class="form-input" name="email" placeholder="example@company.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">住所</label>
+        <input type="text" class="form-input" name="address" placeholder="東京都渋谷区...">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">WebサイトURL</label>
+        <input type="url" class="form-input" name="website" placeholder="https://example.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">ジャンル</label>
+        <select class="form-select" name="genre" required>
+          <option value="">選択してください</option>
+          <option value="TV">TV</option>
+          <option value="Web">Web</option>
+          <option value="雑誌">雑誌</option>
+          <option value="新聞">新聞</option>
+          <option value="放送作家">放送作家</option>
+          <option value="ラジオ">ラジオ</option>
+          <option value="Youtube">Youtube</option>
+          <option value="専門誌">専門誌</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label required">名刺交換日</label>
+        <input type="date" class="form-input" name="exchangeDate" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">メモ</label>
+        <textarea class="form-textarea" name="memo" placeholder="メモを入力..."></textarea>
+      </div>
+
+      <input type="hidden" name="id">
+      <input type="hidden" name="imageUrl">
+      <input type="hidden" name="registeredDate">
+
+      <button type="submit" class="submit-btn" id="submitBtn">更新する</button>
+    </form>
+
+    <div id="loading" class="loading">更新中...</div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwmf5668FrOME4JZNzpRT2Ydg9bl74Ufy5vtOCiF9GAxIrjY4Wh-gSBQEyngjCIYoa4rA/exec';
+    
+    // URLパラメータからIDを取得
+    const params = new URLSearchParams(window.location.search);
+    const cardId = params.get('id');
+
+    // ページ読み込み時にデータ取得
+    document.addEventListener('DOMContentLoaded', () => {
+      if (cardId) {
+        loadCard(cardId);
+      } else {
+        alert('名刺IDが指定されていません');
+        location.href = 'list.html';
+      }
+    });
+
+    // データ取得
+    async function loadCard(id) {
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const editForm = document.getElementById('editForm');
+      
+      try {
+        const response = await fetch(API_URL);
+        const result = await response.json();
+        
+        if (result.success) {
+          const card = result.data.find(c => c.id == id);
+          
+          if (card) {
+            fillForm(card);
+            loadingOverlay.classList.remove('active');
+            editForm.style.display = 'block';
+          } else {
+            throw new Error('名刺が見つかりませんでした');
+          }
+        } else {
+          throw new Error(result.error || 'データの取得に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('エラーが発生しました: ' + error.message);
+        location.href = 'list.html';
+      }
+    }
+
+    // フォームにデータを入力
+    function fillForm(card) {
+      // 名刺画像を表示
+      if (card.imageUrl) {
+        document.getElementById('imageContainer').innerHTML = `
+          <img src="${card.imageUrl}" alt="名刺画像" class="card-image">
+        `;
+      }
+
+      // 各フィールドに値を設定
+      document.querySelector('input[name="id"]').value = card.id;
+      document.querySelector('input[name="name"]').value = card.name || '';
+      document.querySelector('input[name="furigana"]').value = card.furigana || '';
+      document.querySelector('input[name="company"]').value = card.company || '';
+      document.querySelector('input[name="media"]').value = card.media || '';
+      document.querySelector('input[name="department"]').value = card.department || '';
+      document.querySelector('input[name="position"]').value = card.position || '';
+      document.querySelector('input[name="phone"]').value = card.phone || '';
+      document.querySelector('input[name="mobile"]').value = card.mobile || '';
+      document.querySelector('input[name="email"]').value = card.email || '';
+      document.querySelector('input[name="address"]').value = card.address || '';
+      document.querySelector('input[name="website"]').value = card.website || '';
+      document.querySelector('select[name="genre"]').value = card.genre || '';
+      document.querySelector('input[name="exchangeDate"]').value = card.exchangeDate || '';
+      document.querySelector('textarea[name="memo"]').value = card.memo || '';
+      document.querySelector('input[name="imageUrl"]').value = card.imageUrl || '';
+      document.querySelector('input[name="registeredDate"]').value = card.registeredDate || '';
+    }
+
+    // フォーム送信
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const form = e.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData);
+      
+      const submitBtn = document.getElementById('submitBtn');
+      const loading = document.getElementById('loading');
+      const message = document.getElementById('message');
+      
+      // ローディング表示
+      submitBtn.disabled = true;
+      loading.style.display = 'block';
+      message.style.display = 'none';
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=update&data=${encodeURIComponent(JSON.stringify(data))}`
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTPエラー: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // 成功メッセージ表示
+          message.textContent = '名刺情報を更新しました！';
+          message.className = 'message success';
+          message.style.display = 'block';
+          
+          // 2秒後に詳細画面に戻る
+          setTimeout(() => {
+            location.href = `detail.html?id=${data.id}`;
+          }, 2000);
+        } else {
+          throw new Error(result.error || '更新に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        message.textContent = 'エラーが発生しました: ' + error.message;
+        message.className = 'message error';
+        message.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+
+    // 戻るボタン
+    function goBack() {
+      const cardId = document.querySelector('input[name="id"]').value;
+      location.href = `detail.html?id=${cardId}`;
+    }
+  </script>
+</body>
+</html>
