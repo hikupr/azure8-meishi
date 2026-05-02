@@ -338,7 +338,17 @@
         
       } catch (err) {
         processing.classList.remove('active');
-        alert('名刺の読み取りに失敗しました。手動入力で登録してください。\n\nエラー: ' + err.message);
+        
+        // 詳細なエラーメッセージを表示
+        const errorDetail = `エラー詳細:
+タイプ: ${err.name || '不明'}
+メッセージ: ${err.message || '不明'}`;
+        
+        console.error('OCRエラー:', err);
+        console.error('エラー詳細:', errorDetail);
+        
+        alert('名刺の読み取りに失敗しました。\n\n' + errorDetail + '\n\n画像は保存されているので、手動入力で登録できます。');
+        
         // 画像だけ保存して手動入力へ
         localStorage.setItem('capturedCardImage', imageData);
         location.href = 'register.html';
@@ -352,8 +362,13 @@
         throw new Error('Google Cloud Vision API Keyが設定されていません');
       }
       
+      console.log('OCR開始...');
+      
       // Base64データ部分のみを抽出
       const base64Image = imageData.replace(/^data:image\/(png|jpeg);base64,/, '');
+      
+      console.log('Vision APIにリクエスト送信...');
+      console.log('APIキー（最初の10文字）:', VISION_API_KEY.substring(0, 10) + '...');
       
       // Google Cloud Vision APIリクエスト
       const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`, {
@@ -369,11 +384,20 @@
         })
       });
       
+      console.log('レスポンスステータス:', response.status);
+      
       if (!response.ok) {
-        throw new Error('OCR APIエラー: ' + response.status);
+        const errorText = await response.text();
+        console.error('APIエラーレスポンス:', errorText);
+        throw new Error(`OCR APIエラー: ${response.status} - ${errorText}`);
       }
       
       const result = await response.json();
+      console.log('OCR結果:', result);
+      
+      if (result.responses && result.responses[0].error) {
+        throw new Error(`Vision APIエラー: ${JSON.stringify(result.responses[0].error)}`);
+      }
       
       if (!result.responses || !result.responses[0].textAnnotations) {
         throw new Error('テキストが検出されませんでした');
@@ -381,6 +405,7 @@
       
       // 抽出されたテキスト全体
       const fullText = result.responses[0].textAnnotations[0].description;
+      console.log('抽出されたテキスト:', fullText);
       
       // テキストから名刺情報を抽出
       return extractCardInfo(fullText);
