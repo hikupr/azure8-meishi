@@ -124,7 +124,6 @@
       display: block;
       width: 100%;
       padding: 16px;
-      background: #3498DB;
       color: white;
       border: none;
       border-radius: 12px;
@@ -132,12 +131,32 @@
       font-weight: bold;
       cursor: pointer;
       text-align: center;
-      margin-top: 20px;
+      margin-top: 12px;
       transition: all 0.3s;
     }
 
-    .action-btn:hover {
+    .action-btn.edit {
+      background: #3498DB;
+    }
+
+    .action-btn.edit:hover {
       background: #2980B9;
+    }
+
+    .action-btn.share {
+      background: #27AE60;
+    }
+
+    .action-btn.share:hover {
+      background: #229954;
+    }
+
+    .action-btn.delete {
+      background: #E74C3C;
+    }
+
+    .action-btn.delete:hover {
+      background: #C0392B;
     }
 
     .loading {
@@ -155,6 +174,80 @@
       font-size: 14px;
       font-weight: 600;
     }
+
+    /* 削除確認モーダル */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #2C3E50;
+      margin-bottom: 12px;
+    }
+
+    .modal-text {
+      font-size: 16px;
+      color: #7F8C8D;
+      margin-bottom: 24px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .modal-btn.cancel {
+      background: #ECF0F1;
+      color: #2C3E50;
+    }
+
+    .modal-btn.cancel:hover {
+      background: #BDC3C7;
+    }
+
+    .modal-btn.confirm {
+      background: #E74C3C;
+      color: white;
+    }
+
+    .modal-btn.confirm:hover {
+      background: #C0392B;
+    }
   </style>
 </head>
 <body>
@@ -168,8 +261,19 @@
     <div id="cardDetail" style="display: none;"></div>
   </div>
 
+  <!-- 削除確認モーダル -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-title">名刺を削除しますか？</div>
+      <div class="modal-text">この操作は取り消せません。本当に削除しますか？</div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeDeleteModal()">キャンセル</button>
+        <button class="modal-btn confirm" onclick="confirmDelete()">削除する</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ★★★ ここにあなたのGoogle Apps ScriptのURLを貼り付けてください ★★★
     const API_URL = 'https://script.google.com/macros/s/AKfycbwmf5668FrOME4JZNzpRT2Ydg9bl74Ufy5vtOCiF9GAxIrjY4Wh-gSBQEyngjCIYoa4rA/exec';
     
     // URLパラメータからIDを取得
@@ -344,7 +448,9 @@
             ` : ''}
           </div>
 
-          <button class="action-btn" onclick="shareCard()">📤 共有する</button>
+          <button class="action-btn edit" onclick="editCard()">✏️ 編集する</button>
+          <button class="action-btn share" onclick="shareCard()">📤 共有する</button>
+          <button class="action-btn delete" onclick="openDeleteModal()">🗑️ 削除する</button>
         </div>
       `;
       
@@ -352,6 +458,50 @@
       
       // 共有用データをグローバルに保存
       window.currentCard = card;
+    }
+
+    // 編集画面に移動
+    function editCard() {
+      const card = window.currentCard;
+      location.href = `edit.html?id=${card.id}`;
+    }
+
+    // 削除モーダルを開く
+    function openDeleteModal() {
+      document.getElementById('deleteModal').classList.add('active');
+    }
+
+    // 削除モーダルを閉じる
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('active');
+    }
+
+    // 削除を実行
+    async function confirmDelete() {
+      const card = window.currentCard;
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `action=delete&data=${encodeURIComponent(JSON.stringify({ id: card.id }))}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          alert('名刺を削除しました');
+          location.href = 'list.html';
+        } else {
+          throw new Error(result.error || '削除に失敗しました');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('エラーが発生しました: ' + error.message);
+        closeDeleteModal();
+      }
     }
 
     // 共有機能
